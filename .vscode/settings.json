@@ -1,0 +1,12 @@
+{
+    "Lua.workspace.checkThirdParty": false,
+    "Lua.workspace.useGitIgnore": false,
+    "Lua.workspace.library": [
+        "${3rd}/love2d/library"
+    ],
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.workspace.ignoreDir": [
+        ".vscode",
+        "game/data"
+    ],
+}
