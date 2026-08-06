@@ -1,5 +1,6 @@
 local CollisionMask = require "CollisionMask"
 local RaycastCollision3D = require "RaycastCollision3D"
+local BodyLayers         = require "BodyLayers"
 
 ---@class Body
 ---@field x number
@@ -37,6 +38,7 @@ function Body:initLayerMasks()
 
     self.bodyinlayers = self.bodyinlayers or 0
     self.bodyhitslayers = self.bodyhitslayers or 0
+    BodyLayers:add(self)
 end
 
 function Body:init()
@@ -69,6 +71,14 @@ function Body:init()
     --         end
     --     end
     -- end
+end
+
+function Body:hasDisappeared()
+    return self.disappeared
+end
+
+function Body:disappear()
+    self.disappeared = true
 end
 
 function Body:release()

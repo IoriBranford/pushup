@@ -1,29 +1,28 @@
 local Body         = require "Body"
 local CollisionMask= require "CollisionMask"
 local findClosest  = require "findClosest"
+local ihash        = require "ihash"
+local BodyLayers   = require "BodyLayers"
 
 ---@module 'World'
 local World = {}
 
-local allbodies = {} ---@type Body[]
-local bodygroups = {} ---@type table<string, Body[]>
+local allbodies = {} ---@type ihash<Body>
+local allbodiesbyid = {} ---@type table<integer,Body>
+local bodygroups = {} ---@type table<string, ihash<Body>>
 local nextid
 
 function World.init(nextid_)
     nextid = nextid_ or 1
-    bodygroups.players = {}
-    bodygroups.enemies = {}
-    bodygroups.items = {}
-    bodygroups.projectiles = {}
-    bodygroups.container = {}
-    bodygroups.solids = allbodies
-    bodygroups.triggers = {}
-end
-
-function World.addGroup(name)
-    if not bodygroups[name] then
-        bodygroups[name] = {}
-    end
+    bodygroups = {
+        players = {},
+        enemies = {},
+        items = {},
+        projectiles = {},
+        container = {},
+        solids = {},
+        triggers = {},
+    }
 end
 
 function World.quit()
@@ -32,13 +31,50 @@ function World.quit()
     end
     allbodies = {}
     bodygroups = {}
+    nextid = 1
+    allbodiesbyid = {}
+    BodyLayers:clear()
+end
+
+function World.getBodyById(id)
+    return type(id) == "table" and allbodiesbyid[id.id]
+        or type(id) == "number" and allbodiesbyid[id]
+end
+
+function World.addGroup(name)
+    if not bodygroups[name] then
+        bodygroups[name] = {}
+    end
 end
 
 function World.getGroup(group)
     return group == "all" and allbodies or bodygroups[group]
 end
 
+function World.addToGroup(g, c)
+    g = World.getGroup(g)
+    if g then
+        ihash.add(g, c)
+    end
+end
+
+function World.removeFromGroup(g, c)
+    g = World.getGroup(g)
+    if g then
+        ihash.remove(g, c)
+    end
+end
+
 function World.addBody(body)
+    -- local tobj = type(object)
+    -- local id = tobj == "table" and object.id
+    -- local character = id and activebyid[id]
+    -- if character then return character end
+
+    -- if tobj == "string" then
+    --     object = {type = object}
+    -- end
+
     -- local typ = object.type
     -- if typ then
     --     Database.fillBlanks(object, typ)
@@ -63,14 +99,15 @@ function World.addBody(body)
     --     end
     -- end
     -- local body = script.cast(object) ---@type Body
-    -- if not body.id then
-    --     body.id = nextid
+    -- if not id then
+    --     id = nextid
+    --     body.id = id
     --     nextid = nextid + 1
     -- end
     -- body:init()
     -- body:initAseprite()
     -- body.camera = camera
-    -- body.solids = bodies
+    -- body.solids = solids
     -- if not body.opponents then
     --     if body.team == "players" then
     --         body.opponents = enemies
@@ -79,12 +116,9 @@ function World.addBody(body)
     --     end
     -- end
     -- if body.bodyinlayers ~= 0 then
-    --     bodies[#bodies+1] = body
+    --     World.addToGroup("solids", body)
     -- end
-    -- local team = groups[body.team]
-    -- if team then
-    --     team[#team+1] = body
-    -- end
+    -- World.addToGroup(body.team, body)
     -- if body.team == "triggers" then
     --     local ok, err = body:validateAction()
     --     if not ok then print(err) end
@@ -93,6 +127,8 @@ function World.addBody(body)
     --     StateMachine.start(body, body.initialai)
     -- end
     -- body:addToScene(scene)
+    -- World.addToGroup("all", body)
+    -- activebyid[id] = body
     allbodies[#allbodies+1] = body
     return body
 end
@@ -107,9 +143,9 @@ function World.addBodies(bodies)
     end
 end
 
-local Contacts = {}
+local Contacts = {} ---@type Contact[]
 
-function World.nextMove()
+function World.moveBodies()
     for i = 1, #allbodies do local body = allbodies[i]
         body:updateBody()
     end
@@ -120,16 +156,22 @@ function World.nextMove()
         if hitvely then solid.vely = solid.vely - hitvely end
         if hitvelz then solid.velz = solid.velz - hitvelz end
     end
+end
 
+function World.updateContacts()
     for i = #Contacts, 1, -1 do
         Contacts[i]:_release()
         Contacts[i] = nil
     end
 
-    -- for i = 1, #bodies do local body = bodies[i]
+    -- local solids = bodygroups.solids
+    -- for i = 1, #solids do local body = solids[i]
     --     if body:isAttacking() then
-    --         for j = 1, #bodies do local opponent = bodies[j]
-    --             Contacts[#Contacts+1] = Attacker.getAttackHit(body, opponent)
+    --         local mask = body.attack.hitslayers or 0
+    --         for _, layer in BodyLayers:eachLayer(mask, 1) do
+    --             for _, opponent in ipairs(layer) do
+    --                 Contacts[#Contacts+1] = Attacker.getAttackHit(body, opponent)
+    --             end
     --         end
     --     end
     -- end
@@ -138,19 +180,17 @@ function World.nextMove()
     --     hit.target:onHitByAttack(hit)
     --     Attacker.onAttackHit(hit.attacker, hit)
     -- end
+end
 
+function World.updateFloors()
     for i = 1, #allbodies do local body = allbodies[i]
         body.floorbody, body.floorz = World.getCylinderFloor(
             body.x, body.y, body.z,
             body.bodyradius, body.bodyheight, body.bodyhitslayers)
     end
-
-    -- for i = 1, #bodies do local body = bodies[i]
-    --     body:fixedupdate()
-    -- end
 end
 
-function World.prepNextMove()
+function World.predictCollision()
     for i = 1, #allbodies do local solid = allbodies[i]
         local hitvelx, hitvely, hitvelz,
             penex, peney, penez = Body.predictCollisionVelocity(solid)
@@ -164,27 +204,15 @@ function World.prepNextMove()
     end
 end
 
----@param bodies Body[]
----@param release boolean
-local function pruneCharacters(bodies, release)
-    local n = #bodies
-    for i = n, 1, -1 do
-        if bodies[i].disappeared then
-            if release then
-                bodies[i]:release()
-            end
-            bodies[i] = bodies[n]
-            bodies[n] = nil
-            n = n - 1
-        end
-    end
-end
-
 function World.pruneDisappeared()
-    for _, bodygroup in pairs(bodygroups) do
-        pruneCharacters(bodygroup, false)
+    for _, g in pairs(bodygroups) do
+        ihash.prune(g, Body.hasDisappeared)
     end
-    pruneCharacters(allbodies, true)
+    BodyLayers:prune(Body.hasDisappeared)
+    ihash.prune(allbodies, Body.hasDisappeared, function(b)
+        b:release()
+        -- allbodiesbyid[b.id] = nil
+    end)
 end
 
 ---@param raycast Raycast
@@ -192,12 +220,14 @@ function World.castRay3(raycast, caster)
     raycast.hitdist = nil
     local hitsomething
     local rdx, rdy, rdz = raycast.dx, raycast.dy, raycast.dz
-    for _, body in ipairs(allbodies) do
-        if body ~= caster and Body.collideWithRaycast3(body, raycast) then
-            raycast.dx = raycast.hitx - raycast.x
-            raycast.dy = raycast.hity - raycast.y
-            raycast.dz = raycast.hitz - raycast.z
-            hitsomething = body
+    for _, layer in BodyLayers:eachLayer(raycast.hitslayers, 1) do
+        for _, body in ipairs(layer) do
+            if body ~= caster and Body.collideWithRaycast3(body, raycast) then
+                raycast.dx = raycast.hitx - raycast.x
+                raycast.dy = raycast.hity - raycast.y
+                raycast.dz = raycast.hitz - raycast.z
+                hitsomething = body
+            end
         end
     end
     raycast.dx = rdx
@@ -225,8 +255,8 @@ end
 
 function World.keepCircleIn(x, y, r, solidlayersmask)
     local totalpenex, totalpeney, penex, peney
-    for _, solid in ipairs(allbodies) do
-        if bit.band(solid.bodyinlayers, solidlayersmask) ~= 0 then
+    for _, layer in BodyLayers:eachLayer(solidlayersmask, 1) do
+        for _, solid in ipairs(layer) do
             penex, peney = Body.getCirclePenetration(solid, x, y, r)
             if penex then
                 x = x - penex
@@ -243,59 +273,80 @@ end
 
 function World.keepCylinderIn(x, y, z, r, h, self, iterations)
     iterations = iterations or 3
-    local solidlayersmask = self.bodyhitslayers
-    if type(solidlayersmask) == "string" then
-        solidlayersmask = CollisionMask.parse(self.bodyhitslayers)
+    local hitsmask = self.bodyhitslayers
+    if type(hitsmask) == "string" then
+        hitsmask = CollisionMask.parse(self.bodyhitslayers)
     end
     local totalpenex, totalpeney, totalpenez, penex, peney, penez
+    local function collide(solid)
+        if solid == self then return false end
+        local mask = solid.bodyinlayers
+        if bit.band(mask, hitsmask) == 0 then
+            return false
+        end
+
+        local any = false
+        penex, peney, penez = Body.getCylinderPenetration(
+                                    solid, x, y, z, r, h)
+        if penex then
+            any = true
+            x = x - penex
+            totalpenex = (totalpenex or 0) + penex
+        end
+        if peney then
+            any = true
+            y = y - peney
+            totalpeney = (totalpeney or 0) + peney
+        end
+        if penez then
+            any = true
+            z = z - penez
+            totalpenez = (totalpenez or 0) + penez
+        end
+        return any
+    end
     for i = 1, iterations do
-        local anycollision = false
-        for _, solid in ipairs(allbodies) do
-            if solid ~= self
-            and bit.band(solid.bodyinlayers, solidlayersmask) ~= 0
-            then
-                penex, peney, penez = Body.getCylinderPenetration(solid, x, y, z, r, h)
-                if penex then
-                    anycollision = true
-                    x = x - penex
-                    totalpenex = (totalpenex or 0) + penex
-                end
-                if peney then
-                    anycollision = true
-                    y = y - peney
-                    totalpeney = (totalpeney or 0) + peney
-                end
-                if penez then
-                    anycollision = true
-                    z = z - penez
-                    totalpenez = (totalpenez or 0) + penez
-                end
+        local any = false
+        for _, layer in BodyLayers:eachLayer(hitsmask, 1) do
+            for _, solid in ipairs(layer) do
+                any = collide(solid)
             end
         end
-        if not anycollision then
+        if not any then
             break
         end
     end
     return x, y, z, totalpenex, totalpeney, totalpenez
 end
 
-function World.getCylinderFloor(x, y, z, r, h, solidlayersmask)
+function World.getCylinderFloor(x, y, z, r, h, hitsmask)
     local floorchar
     local floorz = -math.huge
     local floorpenelensq = -math.huge
-    for _, solid in ipairs(allbodies) do
-        if bit.band(solid.bodyinlayers, solidlayersmask) ~= 0 then
-            local fz, penex, peney = Body.getCylinderFloorZ(solid, x, y, z, r, h)
-            if fz and (penex ~= 0 or peney ~= 0) then
-                local penelensq = penex and peney
-                    and math.lensq(penex, peney) or -math.huge
-                if fz > floorz
-                or fz == floorz and floorpenelensq < penelensq then
-                    floorchar = solid
-                    floorz = fz
-                    floorpenelensq = penelensq
-                end
-            end
+
+    local function testFloor(solid)
+        local mask = solid.bodyinlayers
+        if bit.band(mask, hitsmask) == 0 then
+            return
+        end
+
+        local fz, penex, peney = Body.getCylinderFloorZ(
+                        solid, x, y, z, r, h)
+        if not fz then return end
+        if not (penex ~= 0 or peney ~= 0) then return end
+        local penelensq = penex and peney
+            and math.lensq(penex, peney) or -math.huge
+        if fz > floorz
+        or fz == floorz and floorpenelensq < penelensq then
+            floorchar = solid
+            floorz = fz
+            floorpenelensq = penelensq
+        end
+    end
+
+    for _, layer in BodyLayers:eachLayer(hitsmask, 1) do
+        for _, solid in ipairs(layer) do
+            testFloor(solid)
         end
     end
     return floorchar, floorz

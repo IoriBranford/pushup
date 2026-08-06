@@ -39,6 +39,70 @@ function math.clamp(x, a, b)
     return max(a, min(x, b))
 end
 
+function math.frompolar(a, d)
+    d = d or 1
+    return d*cos(a), d*sin(a)
+end
+
+function math.topolar(x, y)
+    local d = math.len(x, y)
+    local a = d == 0 and 0 or math.atan2(y, x)
+    return a, d
+end
+
+function math.fromspherical(axy, az, d)
+    local x, y = math.frompolar(axy, d)
+    local sinz = sin(az)
+    return x*sinz, y*sinz, d*cos(az)
+end
+
+function math.tospherical(x, y, z)
+    local d = math.len(x, y, z)
+    local axy, dxy = math.topolar(x, y)
+    local xy = y < 0 and -dxy or dxy
+    local az = z == 0 and xy == 0 and 0
+        or math.atan2(xy, z)
+    return axy, az, d
+end
+
+function math.rescale(x, y, l)
+    if x == 0 and y == 0 then
+        return 0, 0
+    end
+    x, y = math.norm(x, y)
+    return x*l, y*l
+end
+
+function math.rescale3(x, y, z, l)
+    if x == 0 and y == 0 and z == 0 then
+        return 0, 0, 0
+    end
+    x, y, z = math.norm(x, y, z)
+    return x*l, y*l, z*l
+end
+
+function math.clampangle(angle, center, arc)
+    arc = arc or math.pi
+    if not center or arc >= math.pi then
+        return angle
+    end
+    local limitx, limity = math.frompolar(center)
+    local aimx, aimy = math.frompolar(angle)
+    if math.dot(limitx, limity, aimx, aimy) >= math.cos(arc) then
+        return angle
+    end
+    if math.det(limitx, limity, aimx, aimy) < 0 then
+        return center - arc
+    end
+    return center + arc
+end
+
+function math.anglesdiff(a, b)
+    local ax, ay = math.frompolar(a)
+    local bx, by = math.frompolar(b)
+    return math.asin(math.det(ax, ay, bx, by))
+end
+
 function math.dot(x, y, x2, y2)
     return x2*x + y2*y
 end
@@ -80,6 +144,7 @@ function math.dist(x1, y1, x2, y2)
     local dx, dy = x2-x1, y2-y1
     return sqrt(dx*dx + dy*dy)
 end
+local dist = math.dist
 
 function math.dist3(x1, y1, z1, x2, y2, z2)
     local dx, dy, dz = x2-x1, y2-y1, z2-z1
@@ -99,6 +164,12 @@ function math.norm(x, y, z)
     z = z or 0
     local len = sqrt(x*x + y*y + z*z)
     return x/len, y/len, z/len
+end
+
+function math.lennorm(x, y, z)
+    z = z or 0
+    local len = sqrt(x*x + y*y + z*z)
+    return len, x/len, y/len, z/len
 end
 
 if Debug_norm0 then
@@ -468,6 +539,21 @@ function math.intersectsegments(ax, ay, bx, by, cx, cy, dx, dy)
         local y = ay + aby*t
         return x, y
     end
+end
+
+function math.lenpolyline(points, i, j)
+    i = max(2, i or 2)
+    j = min(j or #points, #points)
+    local len = 0
+    local x1 = points[i-1]
+    local y1 = points[i]
+    for p = i+2, j, 2 do
+        local x2 = points[p-1]
+        local y2 = points[p]
+        len = len + dist(x1, y1, x2, y2)
+        x1, y1 = x2, y2
+    end
+    return len
 end
 
 -- DEBUG

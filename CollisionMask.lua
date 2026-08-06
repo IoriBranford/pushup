@@ -61,6 +61,10 @@ function CollisionMask.testAny(mask, ...)
     return bit.band(mask, layersmask)
 end
 
+function CollisionMask.getKnownMasks()
+    return layermasks
+end
+
 local names = {}
 function CollisionMask.debugPrint(mask)
     for _, name in ipairs(layermasks) do

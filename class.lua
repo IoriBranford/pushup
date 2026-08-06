@@ -1,4 +1,3 @@
-local Table = require "Table"
 local setmetatable = setmetatable
 
 local function initObject(object, class, ...)
@@ -11,17 +10,20 @@ local function initObject(object, class, ...)
 end
 
 local function createObject(class, ...)
-    return initObject(Table.New(), class, ...)
+    return initObject({}, class, ...)
 end
 
 ---@param base Class?
 ---@param init function?
 local function createClass(base, init)
     ---@class Class
-    local class = {
-        _init = init,
-        _free = Table.Free
-    }
+    local class = {}
+    if base then
+        for k,v in pairs(base) do
+            class[k] = v
+        end
+    end
+
     class.__index = class
 
     function class.cast(t)
@@ -32,6 +34,14 @@ local function createClass(base, init)
         return initObject(t, class, ...)
     end
 
+    function class.copy(object)
+        local copy = class.cast({})
+        for k, v in pairs(object) do
+            copy[k] = v
+        end
+        return copy
+    end
+
     function class.super(t)
         local baseinit = base and base._init
         if baseinit then
@@ -39,10 +49,18 @@ local function createClass(base, init)
         end
     end
 
-    if base then
-        -- metamethods must be copied as they can't be inherited
-        class.__lt = base.__lt
+    function class.is(t)
+        local c = class
+        while c do
+            if getmetatable(t) == c then
+                return c
+            end
+            c = c._base
+        end
     end
+
+    class._init = init or class._init
+    class._base = base
 
     local classmt = {
         __call = createObject,
