@@ -278,6 +278,9 @@ function Body:getCirclePenetration(x, y, r)
     local points = self.points
     if not points then
         local radii = self.bodyradius + r
+        if distsq <= 0 then
+            return radii, 0
+        end
         local dist = math.sqrt(distsq)
         local pene = radii - dist
         local dx, dy = self.x - x, self.y - y
