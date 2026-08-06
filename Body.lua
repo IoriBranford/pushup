@@ -26,7 +26,7 @@ local BodyLayers         = require "BodyLayers"
 ---@field mass number
 ---@field paused boolean
 ---@field disappeared boolean
-local Body = {}
+local Body = require "class" ()
 
 function Body:initLayerMasks()
     if type(self.bodyinlayers) == "string" then
@@ -41,7 +41,7 @@ function Body:initLayerMasks()
     BodyLayers:add(self)
 end
 
-function Body:init()
+function Body:_init()
     self.x = self.x or 0
     self.y = self.y or 0
     self.z = self.z or 0
