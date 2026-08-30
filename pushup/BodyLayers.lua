@@ -1,4 +1,4 @@
-local CollisionMask = require "CollisionMask"
+local CollisionMask = require "pushup.CollisionMask"
 local ihash         = require "ihash"
 
 ---@class BodyLayers

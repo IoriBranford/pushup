@@ -1,6 +1,6 @@
-local CollisionMask = require "CollisionMask"
-local RaycastCollision3D = require "RaycastCollision3D"
-local BodyLayers         = require "BodyLayers"
+local CollisionMask = require "pushup.CollisionMask"
+local RaycastCollision3D = require "pushup.RaycastCollision3D"
+local BodyLayers         = require "pushup.BodyLayers"
 local math2              = require "math123.math2"
 local math3              = require "math123.math3"
 
@@ -201,7 +201,7 @@ end
 
 function Body:getCollidedPosition()
     local x, y, z, r, h = self.x, self.y, self.z, self.bodyradius, self.bodyheight
-    local World = require "World"
+    local World = require "pushup.World"
     local newx, newy, newz, penex, peney, penez = World.keepCylinderIn(x, y, z, r, h, self)
     return newx, newy, newz, penex, peney, penez
 end
@@ -217,7 +217,7 @@ function Body:predictCollisionVelocity()
     local nextx = self.x + self.velx
     local nexty = self.y + self.vely
     local nextz = self.z + self.velz
-    local World = require "World"
+    local World = require "pushup.World"
     local newx1, newy1, newz1, penex, peney, penez = World.keepCylinderIn(nextx, nexty, nextz, r, h, self)
     return newx1 - nextx, newy1 - nexty, newz1 - nextz, penex, peney, penez
 end

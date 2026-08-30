@@ -1,6 +1,6 @@
-local World = require "World"
+local World = require "pushup.World"
 local fixedupdate = require "fixedupdate"
-local Body        = require "Body"
+local Body        = require "pushup.Body"
 local GX = love.graphics
 local KB = love.keyboard
 

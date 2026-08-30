@@ -1,8 +1,8 @@
-local Body         = require "Body"
-local CollisionMask= require "CollisionMask"
+local Body         = require "pushup.Body"
+local CollisionMask= require "pushup.CollisionMask"
 local findClosest  = require "findClosest"
 local ihash        = require "ihash"
-local BodyLayers   = require "BodyLayers"
+local BodyLayers   = require "pushup.BodyLayers"
 local math2 = require "math123.math2"
 
 ---@module 'World'

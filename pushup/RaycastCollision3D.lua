@@ -224,7 +224,7 @@ function RaycastCollision3D:collide(raycast)
         return
     end
 
-    local Body = require "Body"
+    local Body = require "pushup.Body"
     local projx, projy, projdsq = Body.testCircleWithRaycast(self, raycast)
     if not projx then
         return
