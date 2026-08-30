@@ -1,6 +1,6 @@
 {
     "Lua.workspace.checkThirdParty": false,
-    "Lua.workspace.useGitIgnore": false,
+    "Lua.workspace.ignoreSubmodules": false,
     "Lua.workspace.library": [
         "${3rd}/love2d/library"
     ],
