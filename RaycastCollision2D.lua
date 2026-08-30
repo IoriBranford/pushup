@@ -1,3 +1,5 @@
+local math2 = require "math123.math2"
+
 local RaycastCollision2D = {}
 
 ---@param raycast Raycast
@@ -23,7 +25,7 @@ function RaycastCollision2D:collide(raycast)
         -- hypot is circle center to intersection point
         -- one side is circle center to proj point
         -- other side is proj point to intersection point
-        local rnx, rny = math.norm(rdx, rdy)
+        local rnx, rny = math2.norm(rdx, rdy)
         local projtohitdist = math.sqrt(selfr*selfr - projdsq)
         if canhitside < 0 then
             -- hitx,hity is the far intersection
@@ -40,14 +42,14 @@ function RaycastCollision2D:collide(raycast)
         if raycast.hitx == selfx and raycast.hity == selfy then
             raycast.hitnx, raycast.hitny = -rnx, -rny
         else
-            raycast.hitnx, raycast.hitny = math.norm(raycast.hitx - selfx, raycast.hity - selfy)
+            raycast.hitnx, raycast.hitny = math2.norm(raycast.hitx - selfx, raycast.hity - selfy)
         end
         raycast.hitz = raycast.z
         raycast.hitnz = 0
-        raycast.hitdist = math.dist(rx, ry, raycast.hitx, raycast.hity)
-        local d = math.det(selfx - rx, selfy - ry, rdx, rdy)
-        raycast.hitwallx, raycast.hitwally = math.rot90(raycast.hitx - selfx, raycast.hity - selfy, d)
-        raycast.hitwallx2, raycast.hitwally2 = math.rot90(raycast.hitx - selfx, raycast.hity - selfy, -d)
+        raycast.hitdist = math2.dist(rx, ry, raycast.hitx, raycast.hity)
+        local d = math2.det(selfx - rx, selfy - ry, rdx, rdy)
+        raycast.hitwallx, raycast.hitwally = math2.rot90(raycast.hitx - selfx, raycast.hity - selfy, d)
+        raycast.hitwallx2, raycast.hitwally2 = math2.rot90(raycast.hitx - selfx, raycast.hity - selfy, -d)
         raycast.hitwallx = raycast.hitwallx + raycast.hitx
         raycast.hitwally = raycast.hitwally + raycast.hity
         raycast.hitwallx2 = raycast.hitwallx2 + raycast.hitx
@@ -63,18 +65,18 @@ function RaycastCollision2D:collide(raycast)
     local ax, ay = points[#points-1], points[#points]
     for i = 2, #points, 2 do
         local bx, by = points[i-1], points[i]
-        local walldir = math.det(rdx, rdy, bx-ax, by-ay)
+        local walldir = math2.det(rdx, rdy, bx-ax, by-ay)
         if walldir * canhitside >= 0 then
-            local hx, hy, hx2, hy2 = math.intersectsegments(rx, ry, rx2, ry2, ax, ay, bx, by)
+            local hx, hy, hx2, hy2 = math2.intersectsegments(rx, ry, rx2, ry2, ax, ay, bx, by)
             if hx and hy then
-                if hx2 and hy2 and math.dot(rdx, rdy, hx2, hy2) < math.dot(rdx, rdy, hx, hy) then
+                if hx2 and hy2 and math2.dot(rdx, rdy, hx2, hy2) < math2.dot(rdx, rdy, hx, hy) then
                     hx, hy = hx2, hy2
                 end
-                local dsq = math.distsq(rx, ry, hx, hy)
+                local dsq = math2.distsq(rx, ry, hx, hy)
                 if dsq < hitdsq then
                     hitdsq = dsq
                     hitx, hity = hx, hy
-                    hitnx, hitny = math.norm(math.rot90(bx-ax, by-ay, walldir))
+                    hitnx, hitny = math2.norm(math2.rot90(bx-ax, by-ay, walldir))
                     hitwallx, hitwally = ax, ay
                     hitwallx2, hitwally2 = bx, by
                     hitside = walldir

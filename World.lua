@@ -3,6 +3,7 @@ local CollisionMask= require "CollisionMask"
 local findClosest  = require "findClosest"
 local ihash        = require "ihash"
 local BodyLayers   = require "BodyLayers"
+local math2 = require "math123.math2"
 
 ---@module 'World'
 local World = {}
@@ -335,7 +336,7 @@ function World.getCylinderFloor(x, y, z, r, h, hitsmask)
         if not fz then return end
         if not (penex ~= 0 or peney ~= 0) then return end
         local penelensq = penex and peney
-            and math.lensq(penex, peney) or -math.huge
+            and math2.lensq(penex, peney) or -math.huge
         if fz > floorz
         or fz == floorz and floorpenelensq < penelensq then
             floorchar = solid

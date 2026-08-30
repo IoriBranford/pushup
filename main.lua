@@ -1,4 +1,3 @@
-require "Math"
 local World = require "World"
 local fixedupdate = require "fixedupdate"
 local Body        = require "Body"

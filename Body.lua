@@ -1,6 +1,8 @@
 local CollisionMask = require "CollisionMask"
 local RaycastCollision3D = require "RaycastCollision3D"
 local BodyLayers         = require "BodyLayers"
+local math2              = require "math123.math2"
+local math3              = require "math123.math3"
 
 ---@class Body
 ---@field x number
@@ -56,10 +58,10 @@ function Body:_init()
     Body.initLayerMasks(self)
 
     -- if self.points then
-    --     local _, rsq = math.farthestpoint(self.points, 0, 0)
+    --     local _, rsq = math2.farthestpoint(self.points, 0, 0)
     --     assert(#self.points >= 6, self.id)
     --     self.bodyradius = math.sqrt(rsq)
-    --     self.points.outward = math.polysignedarea(self.points) < 0
+    --     self.points.outward = math2.polysignedarea(self.points) < 0
     -- elseif self.tile then
     --     local shapes = self.tile.shapes
     --     if shapes then
@@ -90,10 +92,10 @@ end
 function Body:initPolygonBody(points, dx, dy)
     dx = dx or 0
     dy = dy or 0
-    local _, rsq = math.farthestpoint(points, -dx, -dy)
+    local _, rsq = math2.farthestpoint(points, -dx, -dy)
     self.bodyradius = math.sqrt(rsq)
     self.points = {}
-    self.points.outward = math.polysignedarea(points) < 0
+    self.points.outward = math2.polysignedarea(points) < 0
     assert(#points >= 6, "Three or more 2D points required for a polygon shape")
     for i = 2, #points, 2 do
         local px, py = points[i-1], points[i]
@@ -112,10 +114,10 @@ function Body:forceTowardsVelXY(targetvelx, targetvely, force)
     local forcex = (targetvelx - velx)
     local forcey = (targetvely - vely)
     force = force or math.huge
-    if math.lensq(forcex, forcey) <= force*force then
+    if math2.lensq(forcex, forcey) <= force*force then
         self.velx, self.vely = targetvelx, targetvely
     else
-        forcex, forcey = math.norm(forcex, forcey)
+        forcex, forcey = math2.norm(forcex, forcey)
         self.velx = velx + forcex * force
         self.vely = vely + forcey * force
     end
@@ -127,10 +129,10 @@ function Body:forceTowardsVel3(targetvelx, targetvely, targetvelz, force)
     local forcey = (targetvely - vely)
     local forcez = (targetvelz - velz)
     force = force or math.huge
-    if math.lensq(forcex, forcey, forcez) <= force*force then
+    if math2.lensq(forcex, forcey, forcez) <= force*force then
         self.velx, self.vely, self.velz = targetvelx, targetvely, targetvelz
     else
-        forcex, forcey, forcez = math.norm(forcex, forcey, forcez)
+        forcex, forcey, forcez = math3.norm(forcex, forcey, forcez)
         self.velx = velx + forcex * force
         self.vely = vely + forcey * force
         self.velz = velz + forcez * force
@@ -143,7 +145,7 @@ function Body:accelerateTowardsVelXY(targetvelx, targetvely, mass, e)
     local velx, vely = self.velx, self.vely
     velx = velx + (targetvelx - velx) / mass
     vely = vely + (targetvely - vely) / mass
-    if math.distsq(velx, vely, targetvelx, targetvely) < e then
+    if math2.distsq(velx, vely, targetvelx, targetvely) < e then
         self.velx, self.vely = targetvelx, targetvely
     else
         self.velx, self.vely = velx, vely
@@ -157,7 +159,7 @@ function Body:accelerateTowardsVel3(targetvelx, targetvely, targetvelz, mass, e)
     velx = velx + (targetvelx - velx) / mass
     vely = vely + (targetvely - vely) / mass
     velz = velz + (targetvelz - velz) / mass
-    if math.distsq3(velx, vely, velz, targetvelx, targetvely, targetvelz) < e then
+    if math3.distsq(velx, vely, velz, targetvelx, targetvely, targetvelz) < e then
         self.velx, self.vely, self.velz = targetvelx, targetvely, targetvelz
     else
         self.velx, self.vely, self.velz = velx, vely, velz
@@ -228,12 +230,12 @@ end
 local function testBodyCollision_polygonAndCircle(polygon, circle)
     local points = polygon.points
     local otherx, othery = circle.x - polygon.x, circle.y - polygon.y
-    if math.pointinpolygon(points, otherx, othery) then
+    if math2.pointinpolygon(points, otherx, othery) then
         return true
     end
-    local nearestx, nearesty = math.nearestpolygonpoint(points, otherx, othery)
+    local nearestx, nearesty = math2.nearestpolygonpoint(points, otherx, othery)
     return nearestx and nearesty
-        and math.distsq(otherx, othery, nearestx, nearesty) <= circle.bodyradius
+        and math2.distsq(otherx, othery, nearestx, nearesty) <= circle.bodyradius
 end
 
 function Body:predictBodyCollision(other)
@@ -242,7 +244,7 @@ function Body:predictBodyCollision(other)
     end
     if self.z + self.velz <= other.z + other.velz + other.bodyheight
         and other.z + other.velz <= self.z + self.velz + self.bodyheight
-        and math.testcircles(self.x + self.velx, self.y + self.vely, self.bodyradius,
+        and math2.testcircles(self.x + self.velx, self.y + self.vely, self.bodyradius,
             other.x + other.velx, other.y + other.vely, other.bodyradius)
     then
         if self.points and not other.points then
@@ -258,7 +260,7 @@ function Body:testBodyCollision(other)
     if self ~= other
         and self.z <= other.z + other.bodyheight
         and other.z <= self.z + self.bodyheight
-        and math.testcircles(self.x, self.y, self.bodyradius, other.x, other.y, other.bodyradius)
+        and math2.testcircles(self.x, self.y, self.bodyradius, other.x, other.y, other.bodyradius)
     then
         if self.points and not other.points then
             return testBodyCollision_polygonAndCircle(self, other)
@@ -270,7 +272,7 @@ function Body:testBodyCollision(other)
 end
 
 function Body:getCirclePenetration(x, y, r)
-    local distsq = math.testcircles(self.x, self.y, self.bodyradius, x, y, r)
+    local distsq = math2.testcircles(self.x, self.y, self.bodyradius, x, y, r)
     if not distsq then
         return
     end
@@ -290,13 +292,13 @@ function Body:getCirclePenetration(x, y, r)
 
     -- get if point in polygon
     x, y = x - self.x, y - self.y
-    local inside = math.pointinpolygon(points, x, y)
+    local inside = math2.pointinpolygon(points, x, y)
     if not points.outward then
         inside = not inside
     end
     -- get nearest point on polygon
-    local nearestx, nearesty, nearesti, nearestj = math.nearestpolygonpoint(points, x, y)
-    local nearestdsq = nearestx and nearesty and math.distsq(x, y, nearestx, nearesty)
+    local nearestx, nearesty, nearesti, nearestj = math2.nearestpolygonpoint(points, x, y)
+    local nearestdsq = nearestx and nearesty and math2.distsq(x, y, nearestx, nearesty)
     -- if not in polygon, and nearest point farther than radius, then no collision
     if not inside and (not nearestdsq or nearestdsq > r*r) then
         return
@@ -308,7 +310,7 @@ function Body:getCirclePenetration(x, y, r)
     if dist == 0 then
         local x1, y1 = points[nearesti-1], points[nearesti]
         local x2, y2 = points[nearestj-1], points[nearestj]
-        nx, ny = math.norm(math.rot90(x2-x1, y2-y1, 1))
+        nx, ny = math2.norm(math2.rot90(x2-x1, y2-y1, 1))
     else
         nx, ny = (nearestx - x)/dist, (nearesty - y)/dist
     end
@@ -324,7 +326,7 @@ local function getCylinderPenetration_outward(self, cylx, cyly, cylz, cylr, cylh
         local iz, iz2 = math.max(cylz, self.z), math.min(cylz+cylh, selftop)
         local penez = iz == cylz and iz - iz2 or iz2 - iz
         local penex, peney = Body.getCirclePenetration(self, cylx, cyly, cylr)
-        if penex and peney and math.lensq(penex, peney) > penez*penez then
+        if penex and peney and math2.lensq(penex, peney) > penez*penez then
             return nil, nil, penez
         end
         return penex, peney
@@ -379,8 +381,8 @@ function Body:testCircleWithRaycast(raycast)
     local rdx, rdy = raycast.dx, raycast.dy
     local rx2, ry2 = rx + rdx, ry + rdy
 
-    local projx, projy = math.projpointsegment(x, y, rx, ry, rx2, ry2)
-    local projdsq = math.distsq(projx, projy, x, y)
+    local projx, projy = math2.projpointsegment(x, y, rx, ry, rx2, ry2)
+    local projdsq = math2.distsq(projx, projy, x, y)
     if projdsq <= r*r then
         return projx, projy, projdsq
     end
@@ -420,12 +422,12 @@ function Body:isInTheirWay(them, time)
     local towardmex, towardmey = x - theirx, y - theiry
     local ourradii = self.bodyradius + them.bodyradius
     local theirvelx, theirvely = them.velx*time, them.vely*time
-    local distxy = math.len(towardmex, towardmey)
+    local distxy = math2.len(towardmex, towardmey)
 
     -- cos * speed * time * dist
     -- = speed toward me * time * dist
     -- = dist they will move toward me in time * dist from me
-    local dot = math.dot(theirvelx, theirvely, towardmex, towardmey)
+    local dot = math2.dot(theirvelx, theirvely, towardmex, towardmey)
     if dot < distxy * (distxy - ourradii) then
         return false
     end
