@@ -17,6 +17,7 @@ struct Body {
     uint32_t hitsTeams;
 
     // dynamic state
+    Body *parent;
     Vector3 position;
     Vector3 velocity;
     bool paused;
