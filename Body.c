@@ -2,44 +2,23 @@
 #include <inttypes.h>
 #include <raymath.h>
 
-typedef struct ShapeBase ShapeBase;
-typedef struct Cylinder Cylinder;
-typedef struct Polyland Polyland; // polyline/polygon extruded along the z axis
-typedef union Shape Shape;
-typedef struct BodySpec BodySpec;
 typedef struct Body Body;
 
-typedef enum {
-    CYLINDER,
-    RAY,
-    POLYLAND
-} ShapeType;
-
 struct Body {
-    Vector3 position;
-    Vector3 velocity;
+    // shape
+    Vector2 *points;
+    int numPoints;
+    float radius;
+    float height;
+    Vector3 ray;
 
+    // collision
     uint32_t teams;
     uint32_t hitsTeams;
 
-    ShapeType shape;
-    union {
-        struct {
-            float radius;
-            float height;
-        } cylinder;
-        struct {
-            Vector3 direction;
-            float length;
-        } ray;
-        struct {
-            float radius;
-            float height;
-            int numPoints;
-            Vector2 *points;
-        } polyland;
-    };
-
+    // dynamic state
+    Vector3 position;
+    Vector3 velocity;
     bool paused;
     bool dead;
 };
