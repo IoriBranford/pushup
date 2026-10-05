@@ -15,8 +15,9 @@ Vector3 GetBodyAccel(Body *body)
     return Vector3Scale(body->force, body->inverseMass);
 }
 
-void UpdateBody(Body *body)
+void UpdateBodyMovement(Body *body)
 {
+    if (!body->live) return;
     Vector3 accel = GetBodyAccel(body);
     body->velocity = Vector3Add(body->velocity, accel);
     body->position = Vector3Add(body->position, body->velocity);

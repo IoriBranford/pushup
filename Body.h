@@ -4,6 +4,6 @@
 typedef struct Body Body;
 
 void InitBody(Body *body);
-void UpdateBody(Body *body);
+void UpdateBodyMovement(Body *body);
 
 #endif
