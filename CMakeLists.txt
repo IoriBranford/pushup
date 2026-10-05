@@ -21,5 +21,8 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
   endif()
 endif()
 
-add_library(pushup Body.c)
+add_library(pushup
+  Body.c
+  World.c
+)
 target_compile_options(pushup PRIVATE -fms-extensions)
