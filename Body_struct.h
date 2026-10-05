@@ -3,7 +3,6 @@
 
 #include <raymath.h>
 #include <inttypes.h>
-#include <stdbool.h>
 
 struct Body {
     // shape
@@ -22,8 +21,8 @@ struct Body {
     Vector3 velocity;
     Vector3 position;
     float inverseMass;
-    bool paused;
-    bool live;
+    int paused;
+    int live;
 };
 
 #endif

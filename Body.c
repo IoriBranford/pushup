@@ -6,7 +6,7 @@
 void InitBody(Body *body)
 {
     memset(body, 0, sizeof(Body));
-    body->live = true;
+    body->live = 1;
     body->inverseMass = 1;
 }
 
