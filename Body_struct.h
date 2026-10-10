@@ -1,7 +1,7 @@
 #ifndef _BODY_STRUCT_H
 #define _BODY_STRUCT_H
 
-#include <raymath.h>
+#include "Body.h"
 #include <inttypes.h>
 
 struct Body {
@@ -11,6 +11,7 @@ struct Body {
     float radius;
     float height;
     Vector3 ray;
+    int shapesActive;
 
     // collision
     uint32_t teams;
